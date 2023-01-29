@@ -1,7 +1,8 @@
 import http from "./httpResponse";
+import config from "../config.json";
 
-const apiUrl = "http://127.0.0.1:5000";
+const apiEndpoint = config.apiUrl + "/genres";
 
 export function getGenres() {
-    return http.get(apiUrl + "/genres");
+    return http.get(apiEndpoint);
 }

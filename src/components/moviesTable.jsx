@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Like from "./common/like";
 import Table from "./common/table";
 import { Link } from "react-router-dom";
+import authService from "../services/authService";
 
 class MoviesTable extends Component {
     state = {
@@ -25,19 +26,29 @@ class MoviesTable extends Component {
                     />
                 ),
             },
-            {
+        ],
+    };
+
+    constructor() {
+        super();
+        const user = authService.getCurrentUser();
+        console.log(user);
+        if (user) {
+            this.state.columns.push({
                 key: "delete",
                 content: (movie) => (
                     <button
                         onClick={() => this.props.onDelete(movie)}
                         className="btn btn-danger btn-sm"
+                        disabled={!user.isAdmin}
                     >
                         Delete
                     </button>
                 ),
-            },
-        ],
-    };
+            });
+        }
+    }
+
     render() {
         const { movies, onLike, onSort, sortColumn } = this.props;
         return (

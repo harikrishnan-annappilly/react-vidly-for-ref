@@ -1,12 +1,20 @@
 import React, { Component } from "react";
-import { getMovies, deleteMovie } from "../services/fakeMovieService";
-import { getGenres } from "../services/fakeGenreService";
+import {
+    getMovies,
+    deleteMovie,
+    saveMovie,
+    getMovie,
+} from "../services/flaskMovieService";
+import { getGenres } from "../services/flaskGenreService";
+// import { getGenres } from "../services/fakeGenreService";
 
 import Pagination from "./common/pagination";
 import Paginate from "./utils/paginate";
 import ListGroup from "./common/list-group";
 import MoviesTable from "./moviesTable";
 import _ from "lodash";
+import { Link } from "react-router-dom";
+import SearchBox from "./common/searchBox";
 
 class Movies extends Component {
     state = {
@@ -14,27 +22,46 @@ class Movies extends Component {
         genres: [],
         pageSize: 4,
         currentPage: 1,
-        sortColumn: { path: "title", order: "asc" },
+        selectedGenre: {},
+        searchQuery: "",
+        sortColumn: {},
     };
 
-    componentDidMount() {
+    async componentDidMount() {
+        const defaultGenre = { name: "All", _id: "" };
+        const defaultSortColumn = { path: "title", order: "asc" };
+        const { data: genres } = await getGenres();
+        const { data: movies } = await getMovies();
+
         this.setState({
-            genres: [{ name: "All" }, ...getGenres()],
-            movies: getMovies(),
+            selectedGenre: defaultGenre,
+            sortColumn: defaultSortColumn,
+            genres: [defaultGenre, ...genres],
+            movies: [...movies],
         });
     }
 
-    handleDeleteMovie = (movie) => {
-        deleteMovie(movie._id);
-        this.setState({ movies: getMovies() });
+    handleDeleteMovie = async (movie) => {
+        const originalMovies = this.state.movies;
+        try {
+            const movies = originalMovies.filter((m) => m._id !== movie._id);
+            this.setState({ movies });
+            await deleteMovie(movie._id);
+        } catch (error) {
+            console.log({ error });
+            this.setState({ movies: originalMovies });
+        }
     };
 
-    handleLikeClick = (movie) => {
-        const movies = [...this.state.movies];
-        const movieIndex = movies.indexOf(movie);
-        movie = { ...movies[movieIndex] };
-        movie.liked = !movie.liked;
-        movies[movieIndex] = movie;
+    handleLikeClick = async ({ _id: movieId }) => {
+        const { data: movieFromList } = await getMovie(movieId);
+        movieFromList.genreId = movieFromList.genre._id;
+        movieFromList.liked = !movieFromList.liked;
+        try {
+            await saveMovie(movieFromList);
+        } catch (error) {}
+
+        const { data: movies } = await getMovies();
         this.setState({ movies });
     };
 
@@ -43,7 +70,19 @@ class Movies extends Component {
     };
 
     handleSelectGenre = (genre) => {
-        this.setState({ selectedGenre: genre, currentPage: 1 });
+        this.setState({
+            selectedGenre: genre,
+            currentPage: 1,
+            searchQuery: "",
+        });
+    };
+
+    handleSearchQueryChange = (query) => {
+        this.setState({
+            selectedGenre: null,
+            currentPage: 1,
+            searchQuery: query,
+        });
     };
 
     handleSort = (sortColumn) => {
@@ -51,14 +90,19 @@ class Movies extends Component {
     };
 
     getMovieDataToRender = () => {
-        let { length: count } = this.state.movies;
-        let { selectedGenre } = this.state;
-        const filterdMovies =
-            selectedGenre && selectedGenre._id
-                ? this.state.movies.filter((movie) => {
-                      return movie.genre._id === selectedGenre._id;
-                  })
-                : this.state.movies;
+        let { selectedGenre, searchQuery } = this.state;
+
+        let filterdMovies = this.state.movies;
+
+        if (searchQuery)
+            filterdMovies = this.state.movies.filter((m) =>
+                m.title.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        else if (selectedGenre && selectedGenre._id)
+            filterdMovies = this.state.movies.filter((movie) => {
+                return movie.genre._id === selectedGenre._id;
+            });
+
         const sortedMovies = _.orderBy(
             filterdMovies,
             [this.state.sortColumn.path],
@@ -74,8 +118,8 @@ class Movies extends Component {
 
     render() {
         const result = this.getMovieDataToRender();
-        if (result.totalCount === 0)
-            return <p>There are no movies in database.</p>;
+        // if (result.totalCount === 0)
+        // return <p>There are no movies in database.</p>;
         return (
             <div className="row">
                 <div className="col-3">
@@ -86,6 +130,19 @@ class Movies extends Component {
                     />
                 </div>
                 <div className="col">
+                    <SearchBox
+                        value={this.state.searchQuery}
+                        onChange={this.handleSearchQueryChange}
+                    ></SearchBox>
+                    {this.props.user && (
+                        <Link
+                            className="btn btn-primary btn-sm my-3"
+                            to="/movies/new"
+                        >
+                            Add New
+                        </Link>
+                    )}
+
                     <p>Showing {result.totalCount} movies in the database.</p>
                     <MoviesTable
                         movies={result.data}

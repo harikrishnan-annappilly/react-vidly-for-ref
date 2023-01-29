@@ -1,5 +1,9 @@
 import axios from "axios";
-// import logger from "./loggingService";
+import authService from "./authService";
+import logger from "./loggingService";
+
+axios.defaults.headers.delete["Authorization"] =
+    "Bearer " + localStorage.getItem("access_token");
 
 axios.interceptors.response.use(null, (error) => {
     if (
@@ -9,8 +13,7 @@ axios.interceptors.response.use(null, (error) => {
     ) {
         return Promise.reject(error);
     }
-    // toast.error("An unexpected error occured");
-    // logger.log(error);
+    logger.log(error);
     return Promise.reject(error);
 });
 

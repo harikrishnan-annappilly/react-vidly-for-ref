@@ -1,30 +1,26 @@
 import http from "./httpResponse";
+import config from "../config.json";
 
-const apiUrl = "http://127.0.0.1:5000";
+const apiEndpoint = config.apiUrl;
 
 export function getMovies() {
-    return http.get(apiUrl + "/movies");
+    return http.get(apiEndpoint + "/movies");
 }
 
 export function getMovie(movieId) {
-    return http.get(apiUrl + "/movie/" + movieId);
+    return http.get(apiEndpoint + "/movie/" + movieId);
 }
 
 export function deleteMovie(movieId) {
-    return http.delete(apiUrl + "/movie/" + movieId);
+    return http.delete(apiEndpoint + "/movie/" + movieId);
 }
 
 export function saveMovie(movie) {
     const movieToBeSaved = { ...movie };
     delete movieToBeSaved.genre;
     delete movieToBeSaved._id;
-    console.log("from saveMovie method", movieToBeSaved);
     if (movie._id) {
-        console.log(
-            "put request is being used",
-            apiUrl + "/movie/" + movie._id
-        );
-        return http.put(apiUrl + "/movie/" + movie._id, movieToBeSaved);
+        return http.put(apiEndpoint + "/movie/" + movie._id, movieToBeSaved);
     }
-    return http.post(apiUrl + "/movies", movieToBeSaved);
+    return http.post(apiEndpoint + "/movies", movieToBeSaved);
 }

@@ -24,16 +24,36 @@ const NavBar = (props) => {
                             Rentals
                         </NavLink>
                     </li>
-                    <li className="nav-item">
-                        <NavLink className="nav-link" to="/login">
-                            Login
-                        </NavLink>
-                    </li>
-                    <li className="nav-item">
-                        <NavLink className="nav-link" to="/register">
-                            Register
-                        </NavLink>
-                    </li>
+                    {!props.user && (
+                        <React.Fragment>
+                            <li className="nav-item">
+                                <NavLink className="nav-link" to="/login">
+                                    Login
+                                </NavLink>
+                            </li>
+                            <li className="nav-item">
+                                <NavLink className="nav-link" to="/register">
+                                    Register
+                                </NavLink>
+                            </li>
+                        </React.Fragment>
+                    )}
+
+                    {props.user && (
+                        <React.Fragment>
+                            <li className="nav-item">
+                                <NavLink className="nav-link" to="/">
+                                    {props.user.username[0].toUpperCase() +
+                                        props.user.username.slice(1)}
+                                </NavLink>
+                            </li>
+                            <li className="nav-item">
+                                <NavLink className="nav-link" to="/logout">
+                                    Log out
+                                </NavLink>
+                            </li>
+                        </React.Fragment>
+                    )}
                 </ul>
             </div>
         </nav>
